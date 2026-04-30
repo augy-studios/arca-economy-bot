@@ -233,7 +233,13 @@ class Admin(commands.Cog):
             return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
-        result = await self.bot.db.integrity_scan()
+        try:
+            result = await self.bot.db.integrity_scan()
+        except Exception as e:
+            log.error(f"integrity_scan command error: {e}", exc_info=True)
+            return await interaction.followup.send(
+                embed=error_embed("Integrity Scan Failed", str(e)), ephemeral=True
+            )
         if result["count"] == 0:
             await interaction.followup.send(
                 embed=success_embed("Integrity OK", "No issues found."), ephemeral=True

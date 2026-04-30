@@ -1111,6 +1111,10 @@ class DatabaseManager:
     async def integrity_scan(self) -> dict:
         fixed = []
         now = self._now()
+        # Audit records to write after the main transaction commits (calling
+        # _write_audit inside BEGIN IMMEDIATE would commit it prematurely).
+        pending_audits = []
+
         async with self._lock:
             await self._conn.execute("BEGIN IMMEDIATE")
             async with self._conn.execute(
@@ -1122,10 +1126,10 @@ class DatabaseManager:
                     "UPDATE users SET cash=0, updated_at=? WHERE guild_id=? AND user_id=?",
                     (now, row["guild_id"], row["user_id"])
                 )
-                await self._write_audit(
+                pending_audits.append((
                     row["guild_id"], 0, "user", row["user_id"],
                     "integrity_fix", "cash", row["cash"], 0, "auto integrity scan"
-                )
+                ))
                 fixed.append(f"guild={row['guild_id']} user={row['user_id']} cash {row['cash']}→0")
             async with self._conn.execute(
                 "SELECT guild_id, user_id, bank FROM users WHERE bank < 0"
@@ -1136,6 +1140,10 @@ class DatabaseManager:
                     "UPDATE users SET bank=0, updated_at=? WHERE guild_id=? AND user_id=?",
                     (now, row["guild_id"], row["user_id"])
                 )
+                pending_audits.append((
+                    row["guild_id"], 0, "user", row["user_id"],
+                    "integrity_fix", "bank", row["bank"], 0, "auto integrity scan"
+                ))
                 fixed.append(f"guild={row['guild_id']} user={row['user_id']} bank {row['bank']}→0")
             async with self._conn.execute(
                 "SELECT guild_id, inv_id, user_id, item_id, quantity FROM inventories WHERE quantity < 0"
@@ -1151,6 +1159,10 @@ class DatabaseManager:
                     f"item={row['item_id']} qty {row['quantity']}→0"
                 )
             await self._conn.execute("COMMIT")
+
+        for args in pending_audits:
+            await self._write_audit(*args)
+
         return {"fixed": fixed, "count": len(fixed)}
 
     # ── Backup ─────────────────────────────────────────────────────────────────
