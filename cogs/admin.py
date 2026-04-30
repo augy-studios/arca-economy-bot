@@ -1,6 +1,6 @@
 """
 cogs/admin.py
-Slash commands: /admin config | leaderboard | auditlog | integrity | blacklist | backup
+Slash commands: /config | /leaderboard | /auditlog
 """
 
 import discord
@@ -120,13 +120,11 @@ class Admin(commands.Cog):
             await self.bot.db.set_leaderboard_data(guild_id, cat, json.dumps(rows))
         log.info(f"Leaderboard cache rebuilt for guild {guild_id}.")
 
-    # ── Admin command group ────────────────────────────────────────────────────
-    admin_group = app_commands.Group(name="admin", description="Admin-only bot management")
-    config_group = app_commands.Group(name="config", description="View or change bot configuration",
-                                      parent=admin_group)
+    # ── Config command group ───────────────────────────────────────────────────
+    config_group = app_commands.Group(name="config", description="Bot configuration and management")
 
-    # ── /admin config set ─────────────────────────────────────────────────────
-    @config_group.command(name="set", description="[ADMIN] Set a bot configuration value.")
+    # ── /config set ───────────────────────────────────────────────────────────
+    @config_group.command(name="set", description="Set a bot configuration value.")
     @app_commands.describe(key="Config key to change", value="New value")
     @app_commands.choices(key=_CONFIG_CHOICES)
     async def config_set(
@@ -172,8 +170,8 @@ class Admin(commands.Cog):
             ephemeral=True,
         )
 
-    # ── /admin config view ────────────────────────────────────────────────────
-    @config_group.command(name="view", description="[ADMIN] Show all current configuration values.")
+    # ── /config view ──────────────────────────────────────────────────────────
+    @config_group.command(name="view", description="Show all current configuration values.")
     async def config_view(self, interaction: discord.Interaction):
         if not require_admin(interaction):
             return await interaction.response.send_message(
@@ -207,8 +205,8 @@ class Admin(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # ── /admin backup ─────────────────────────────────────────────────────────
-    @admin_group.command(name="backup", description="[ADMIN] Manually trigger a database backup.")
+    # ── /config backup ────────────────────────────────────────────────────────
+    @config_group.command(name="backup", description="Manually trigger a database backup.")
     async def admin_backup(self, interaction: discord.Interaction):
         if not require_admin(interaction):
             return await interaction.response.send_message(
@@ -225,8 +223,8 @@ class Admin(commands.Cog):
                 embed=error_embed("Backup Failed", str(e)), ephemeral=True
             )
 
-    # ── /admin integrity ──────────────────────────────────────────────────────
-    @admin_group.command(name="integrity", description="[ADMIN] Run database integrity scan now.")
+    # ── /config integrity ─────────────────────────────────────────────────────
+    @config_group.command(name="integrity", description="Run database integrity scan now.")
     async def admin_integrity(self, interaction: discord.Interaction):
         if not require_admin(interaction):
             return await interaction.response.send_message(
@@ -244,8 +242,8 @@ class Admin(commands.Cog):
                 embed=warn_embed(f"Fixed {result['count']} Issue(s)", desc), ephemeral=True
             )
 
-    # ── /admin blacklist ──────────────────────────────────────────────────────
-    @admin_group.command(name="blacklist_add", description="[ADMIN] Blacklist an account from receiving gifts.")
+    # ── /config blacklist ─────────────────────────────────────────────────────
+    @config_group.command(name="blacklist_add", description="Blacklist an account from receiving gifts.")
     @app_commands.describe(user="User to blacklist", reason="Reason")
     async def blacklist_add(self, interaction: discord.Interaction,
                             user: discord.Member, reason: Optional[str] = None):
@@ -270,7 +268,7 @@ class Admin(commands.Cog):
             ephemeral=True
         )
 
-    @admin_group.command(name="blacklist_remove", description="[ADMIN] Remove a user from the alt blacklist.")
+    @config_group.command(name="blacklist_remove", description="Remove a user from the alt blacklist.")
     @app_commands.describe(user="User to unblacklist")
     async def blacklist_remove(self, interaction: discord.Interaction, user: discord.Member):
         if not require_admin(interaction):
@@ -393,8 +391,8 @@ class Admin(commands.Cog):
             )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # ── /admin refreshlb ──────────────────────────────────────────────────────
-    @admin_group.command(name="refreshlb", description="[ADMIN] Force a leaderboard cache refresh.")
+    # ── /config refreshlb ─────────────────────────────────────────────────────
+    @config_group.command(name="refreshlb", description="Force a leaderboard cache refresh.")
     async def refresh_lb(self, interaction: discord.Interaction):
         if not require_admin(interaction):
             return await interaction.response.send_message(

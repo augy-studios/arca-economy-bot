@@ -23,7 +23,7 @@ PAGES: list[dict] = [
             "3️⃣ Shop — `/shop`, `/buy`\n"
             "4️⃣ Trading — `/trade`\n"
             "5️⃣ Leaderboard & Audit Log\n"
-            "6️⃣ Admin — `/admin`\n"
+            "6️⃣ Config — `/config`\n"
         ),
         "fields": [],
     },
@@ -166,12 +166,12 @@ PAGES: list[dict] = [
         ],
     },
     {
-        "title": "🔧 Admin — `/admin`",
+        "title": "🔧 Config — `/config`",
         "colour": discord.Colour.red(),
-        "description": "All admin commands are ephemeral and require the **Manage Channels** permission.",
+        "description": "All config commands are ephemeral and require the **Manage Channels** permission.",
         "fields": [
             {
-                "name": "🛡️ `/admin config set <key> <value>`",
+                "name": "🛡️ `/config set <key> <value>`",
                 "value": (
                     "Set a bot configuration value. Available keys:\n"
                     "`audit_log_channel` · `alert_channel` · `currency_symbol` · `currency_name`\n"
@@ -181,27 +181,27 @@ PAGES: list[dict] = [
                 ),
             },
             {
-                "name": "🛡️ `/admin config view`",
+                "name": "🛡️ `/config view`",
                 "value": "Display all current configuration values for this server.",
             },
             {
-                "name": "🛡️ `/admin backup`",
+                "name": "🛡️ `/config backup`",
                 "value": "Manually trigger a database backup (auto-runs every 6 h, keeps last 28).",
             },
             {
-                "name": "🛡️ `/admin integrity`",
+                "name": "🛡️ `/config integrity`",
                 "value": "Run the database integrity scan immediately (auto-runs every 6 h). Fixes negative balances and flags anomalies.",
             },
             {
-                "name": "🛡️ `/admin blacklist_add <user> [reason]`",
+                "name": "🛡️ `/config blacklist_add <user> [reason]`",
                 "value": "Block a user from receiving gifts or items.",
             },
             {
-                "name": "🛡️ `/admin blacklist_remove <user>`",
+                "name": "🛡️ `/config blacklist_remove <user>`",
                 "value": "Remove a user from the gift/item blacklist.",
             },
             {
-                "name": "🛡️ `/admin refreshlb`",
+                "name": "🛡️ `/config refreshlb`",
                 "value": "Force an immediate leaderboard cache rebuild.",
             },
         ],

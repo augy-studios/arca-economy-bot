@@ -19,7 +19,7 @@ A full-featured Discord economy bot built with `discord.py` (slash commands), `a
 | **Integrity** | Auto-scan every 6h; fixes negatives, flags anomalies |
 | **Monitoring** | Critical alert channel, error log file, all failures reported |
 | **Inflation Control** | Max balance cap, daily earning cap, total_spent tracking |
-| **Debt** | Optional per `/admin config set` (`allow_debt true`) — off by default |
+| **Debt** | Optional per `/config set` (`allow_debt true`) — off by default |
 | **Soft Deletion** | Nothing is ever hard-deleted from the database |
 
 ---
@@ -47,7 +47,7 @@ Fill in:
 
 - `BOT_TOKEN` — your bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
 
-All other values have sensible defaults and can be changed at runtime via `/admin config set`.
+All other values have sensible defaults and can be changed at runtime via `/config set`.
 
 ### 3. Enable Privileged Intents
 
@@ -75,8 +75,8 @@ python bot.py
 After the bot is online, run these in your server:
 
 ```text
-/admin config set key:Audit Log Channel value:#your-audit-channel
-/admin config set key:Alert Channel value:#your-alert-channel
+/config set key:Audit Log Channel value:#your-audit-channel
+/config set key:Alert Channel value:#your-alert-channel
 ```
 
 ---
@@ -183,17 +183,17 @@ Every logged entry contains: executor, target, field, before value, after value,
 
 ---
 
-### 🔧 Admin
+### 🔧 Config
 
 | Command | Who | Description |
 | --- | --- | --- |
-| `/admin config set key value` | Admin | Set a bot configuration value |
-| `/admin config view` | Admin | Show all current configuration values |
-| `/admin backup` | Admin | Manual database backup |
-| `/admin integrity` | Admin | Run integrity scan now |
-| `/admin blacklist_add user [reason]` | Admin | Block user from receiving gifts/items |
-| `/admin blacklist_remove user` | Admin | Remove from blacklist |
-| `/admin refreshlb` | Admin | Force leaderboard cache rebuild |
+| `/config set key value` | Admin | Set a bot configuration value |
+| `/config view` | Admin | Show all current configuration values |
+| `/config backup` | Admin | Manual database backup |
+| `/config integrity` | Admin | Run integrity scan now |
+| `/config blacklist_add user [reason]` | Admin | Block user from receiving gifts/items |
+| `/config blacklist_remove user` | Admin | Remove from blacklist |
+| `/config refreshlb` | Admin | Force leaderboard cache rebuild |
 
 ---
 
@@ -220,7 +220,7 @@ economybot/
 ├── .env.example
 ├── .gitignore
 ├── cogs/
-│   ├── admin.py            # /admin + /leaderboard + /auditlog
+│   ├── admin.py            # /config + /leaderboard + /auditlog
 │   ├── banking.py          # /money commands
 │   ├── help.py             # /help paginated command reference
 │   ├── inventory.py        # /inventory + /trade commands
@@ -238,8 +238,8 @@ economybot/
 
 ## Configuration Reference
 
-All runtime settings are changed with `/admin config set` and inspected with `/admin config view`.  
-Only `BOT_TOKEN` must be set in `.env`. All other settings are configured per-guild via `/admin config set`.
+All runtime settings are changed with `/config set` and inspected with `/config view`.  
+Only `BOT_TOKEN` must be set in `.env`. All other settings are configured per-guild via `/config set`.
 
 | Key | Default | Description |
 | --- | --- | --- |
