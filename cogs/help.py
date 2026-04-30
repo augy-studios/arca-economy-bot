@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-# ── Page definitions ──────────────────────────────────────────────────────────
+# ── Page definitions ──
 
 PAGES: list[dict] = [
     {
@@ -224,7 +224,7 @@ def _build_embed(page_index: int) -> discord.Embed:
     return embed
 
 
-# ── Paginator view ────────────────────────────────────────────────────────────
+# ── Paginator view ──
 
 class HelpView(discord.ui.View):
     def __init__(self, invoker_id: int):
@@ -242,7 +242,7 @@ class HelpView(discord.ui.View):
     async def _go_to(self, interaction: discord.Interaction, new_page: int):
         if interaction.user.id != self.invoker_id:
             return await interaction.response.send_message(
-                "Only the user who ran `/help` can navigate.", ephemeral=True
+                "Only the user who ran `/help` can navigate.", ephemeral=False
             )
         self.page = new_page
         self._update_buttons()
@@ -269,7 +269,7 @@ class HelpView(discord.ui.View):
             item.disabled = True
 
 
-# ── Cog ───────────────────────────────────────────────────────────────────────
+# ── Cog ──
 
 class Help(commands.Cog):
     def __init__(self, bot):
@@ -279,7 +279,7 @@ class Help(commands.Cog):
     async def help_cmd(self, interaction: discord.Interaction):
         view = HelpView(interaction.user.id)
         await interaction.response.send_message(
-            embed=_build_embed(0), view=view, ephemeral=True
+            embed=_build_embed(0), view=view, ephemeral=False
         )
 
 
