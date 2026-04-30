@@ -204,7 +204,7 @@ class DatabaseManager:
             return
 
         log.info("Migrating database schema to per-guild layout (v1 → v2)…")
-        legacy = self._config.GUILD_ID or 0
+        legacy = 0
 
         # Tables whose PRIMARY KEY changes: rename → create → copy → drop
         pk_migrations = [

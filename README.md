@@ -46,7 +46,6 @@ nano .env
 Fill in:
 
 - `BOT_TOKEN` — your bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
-- `GUILD_ID` — your server's ID (right-click server → Copy Server ID with Developer Mode on)
 
 All other values have sensible defaults and can be changed at runtime via `/admin config set`.
 
@@ -240,12 +239,11 @@ economybot/
 ## Configuration Reference
 
 All runtime settings are changed with `/admin config set` and inspected with `/admin config view`.  
-Only `BOT_TOKEN` and `GUILD_ID` must be set in `.env`.
+Only `BOT_TOKEN` must be set in `.env`. All other settings are configured per-guild via `/admin config set`.
 
 | Key | Default | Description |
 | --- | --- | --- |
 | `BOT_TOKEN` | — | **Required (.env only).** Bot token |
-| `GUILD_ID` | — | **Required (.env only).** Your server ID |
 | `audit_log_channel` | *(not set)* | Channel ID for audit log posts |
 | `alert_channel` | *(not set)* | Channel ID for critical alert posts |
 | `currency_symbol` | 💰 | Symbol shown in balance displays |

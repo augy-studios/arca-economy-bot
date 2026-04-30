@@ -7,7 +7,6 @@ load_dotenv()
 
 class Config:
     TOKEN: str = os.getenv("BOT_TOKEN", "")
-    GUILD_ID: int = int(os.getenv("GUILD_ID", 0))
 
 
 @dataclass

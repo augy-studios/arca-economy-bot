@@ -60,15 +60,8 @@ class EconomyBot(commands.Bot):
             except Exception as e:
                 log.error(f"Failed to load {cog}: {e}", exc_info=True)
 
-        guild_id = self.config.GUILD_ID
-        if guild_id:
-            guild = discord.Object(id=guild_id)
-            self.tree.copy_global_to(guild=guild)
-            synced = await self.tree.sync(guild=guild)
-            log.info(f"Synced {len(synced)} slash commands to guild {guild_id}.")
-        else:
-            synced = await self.tree.sync()
-            log.info(f"Synced {len(synced)} global slash commands.")
+        synced = await self.tree.sync()
+        log.info(f"Synced {len(synced)} global slash commands.")
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user} (ID: {self.user.id})")
