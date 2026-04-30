@@ -11,8 +11,8 @@ import logging
 
 from utils.helpers import (
     require_mod, is_mod,
-    post_audit, notify_user,
-    ConfirmView, get_exec_lock,
+    post_audit,
+    ConfirmView,
     success_embed, error_embed, info_embed
 )
 
@@ -28,10 +28,11 @@ class Shop(commands.Cog):
     # ── /shop view ────────────────────────────────────────────────────────────
     @shop.command(name="view", description="Browse the shop.")
     async def shop_view(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=False)
         gcfg = await self.bot.db.get_guild_settings(interaction.guild_id)
         items = await self.bot.db.get_shop_items(interaction.guild_id)
         if not items:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=info_embed("Shop", "The shop is currently empty."), ephemeral=True
             )
 
@@ -48,7 +49,7 @@ class Shop(commands.Cog):
                 ),
                 inline=False
             )
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+        await interaction.followup.send(embed=embed)
 
     # ── /shop add ─────────────────────────────────────────────────────────────
     @shop.command(name="add", description="[MOD] Add a new item to the shop.")
@@ -74,12 +75,13 @@ class Shop(commands.Cog):
         reply_message: Optional[str] = None,
         tradeable: Optional[bool] = True,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         if price < 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Invalid Price", "Price cannot be negative."), ephemeral=True
             )
 
@@ -88,14 +90,14 @@ class Shop(commands.Cog):
             try:
                 role_id = int(role_required.strip("<@&> "))
             except ValueError:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=error_embed("Invalid Role", "Provide a valid role ID or mention."),
                     ephemeral=True
                 )
 
         existing = await self.bot.db.get_shop_item_by_name(interaction.guild_id, name)
         if existing:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Duplicate", f"An item named **{name}** already exists."),
                 ephemeral=True
             )
@@ -114,7 +116,7 @@ class Shop(commands.Cog):
             is_tradeable=tradeable if tradeable is not None else True,
         )
         if not result["ok"]:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Failed", result["error"]), ephemeral=True
             )
 
@@ -127,7 +129,7 @@ class Shop(commands.Cog):
             after=f"price={price} stock={stock}",
         )
         stock_str = "∞" if stock == -1 else str(stock)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed(
                 "Item Added",
                 f"**{name}** added to shop.\nPrice: {gcfg.fmt_money(price)} | Stock: {stock_str}"
@@ -159,14 +161,15 @@ class Shop(commands.Cog):
         reply_message: Optional[str] = None,
         tradeable: Optional[bool] = None,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
 
         item = await self.bot.db.get_shop_item_by_name(interaction.guild_id, item_name)
         if not item:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Not Found", f"No item called **{item_name}**."), ephemeral=True
             )
 
@@ -190,7 +193,7 @@ class Shop(commands.Cog):
             interaction.guild_id, interaction.user.id, item["item_id"], **updates
         )
         if not result["ok"]:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Edit Failed", result["error"]), ephemeral=True
             )
 
@@ -202,7 +205,7 @@ class Shop(commands.Cog):
             field=item_name,
             after=str(updates),
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed("Item Updated", f"**{item_name}** has been updated."),
             ephemeral=True
         )
@@ -211,20 +214,21 @@ class Shop(commands.Cog):
     @shop.command(name="remove", description="[MOD] Remove an item from the shop (soft delete).")
     @app_commands.describe(item_name="Name of the item to remove")
     async def shop_remove(self, interaction: discord.Interaction, item_name: str):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
 
         item = await self.bot.db.get_shop_item_by_name(interaction.guild_id, item_name)
         if not item:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Not Found"), ephemeral=True
             )
 
         gcfg = await self.bot.db.get_guild_settings(interaction.guild_id)
         view = ConfirmView(interaction.user.id, timeout=gcfg.confirm_timeout_seconds)
-        await interaction.response.send_message(
+        await interaction.edit_original_response(
             embed=discord.Embed(
                 title="⚠️ Remove Item",
                 description=(
@@ -233,7 +237,7 @@ class Shop(commands.Cog):
                 ),
                 colour=discord.Colour.orange()
             ),
-            view=view, ephemeral=True
+            view=view,
         )
         await view.wait()
         if not view.value:
@@ -263,6 +267,7 @@ class Shop(commands.Cog):
     @shop.command(name="iteminfo", description="Get detailed info about a shop item.")
     @app_commands.describe(item_name="Name of the item")
     async def item_info(self, interaction: discord.Interaction, item_name: str):
+        await interaction.response.defer(ephemeral=True)
         gid = interaction.guild_id
         gcfg = await self.bot.db.get_guild_settings(gid)
         item = await self.bot.db.get_shop_item_by_name(gid, item_name)
@@ -270,7 +275,7 @@ class Shop(commands.Cog):
             if is_mod(interaction.user):
                 item = await self.bot.db.get_shop_item_by_name(gid, item_name, include_deleted=True)
             if not item:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=error_embed("Not Found"), ephemeral=True
                 )
 
@@ -289,7 +294,7 @@ class Shop(commands.Cog):
         if item["reply_message"]:
             embed.add_field(name="Purchase Reply", value=item["reply_message"], inline=False)
         embed.set_footer(text=f"Item ID: {item['item_id'][:8]}…")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /buy ──────────────────────────────────────────────────────────────────
     @app_commands.command(name="buy", description="Buy an item from the shop.")

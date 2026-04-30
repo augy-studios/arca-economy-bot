@@ -35,6 +35,7 @@ class Banking(commands.Cog):
     @app_commands.describe(user="User to check (leave blank for yourself)")
     async def balance(self, interaction: discord.Interaction,
                       user: Optional[discord.Member] = None):
+        await interaction.response.defer(ephemeral=True)
         target = user or interaction.user
         gcfg = await self.bot.db.get_guild_settings(interaction.guild_id)
         row = await self.bot.db.get_user(interaction.guild_id, target.id)
@@ -46,7 +47,7 @@ class Banking(commands.Cog):
             f"💰 **Total:** {gcfg.fmt_money(total)}"
         )
         embed.set_thumbnail(url=target.display_avatar.url)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /money add ────────────────────────────────────────────────────────────
     @money.command(name="add", description="[MOD] Add money to a user or role.")
@@ -65,13 +66,14 @@ class Banking(commands.Cog):
         field: app_commands.Choice[str] = None,
         note: Optional[str] = None,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission", "You need Manage Channels to use this."),
                 ephemeral=True
             )
         if amount <= 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Invalid Amount", "Amount must be positive."), ephemeral=True
             )
         wallet = field.value if field else "cash"
@@ -94,12 +96,13 @@ class Banking(commands.Cog):
         field: app_commands.Choice[str] = None,
         note: Optional[str] = None,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         if amount <= 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Invalid Amount", "Amount must be positive."), ephemeral=True
             )
         wallet = field.value if field else "cash"
@@ -196,22 +199,22 @@ class Banking(commands.Cog):
     @money.command(name="reset", description="[ADMIN] Reset a user's entire balance to 0.")
     @app_commands.describe(user="User to reset")
     async def money_reset(self, interaction: discord.Interaction, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission", "Manage Channels required."), ephemeral=True
             )
         gid = interaction.guild_id
         gcfg = await self.bot.db.get_guild_settings(gid)
 
         view = ConfirmView(interaction.user.id, timeout=gcfg.confirm_timeout_seconds)
-        await interaction.response.send_message(
+        await interaction.edit_original_response(
             embed=discord.Embed(
                 title="⚠️ Confirm Balance Reset",
                 description=f"This will reset **{user.mention}**'s cash and bank to **0**.\nContinue?",
                 colour=discord.Colour.orange()
             ),
             view=view,
-            ephemeral=True
         )
         await view.wait()
         if not view.value:
@@ -256,7 +259,6 @@ class Banking(commands.Cog):
         op_name: str,
         note: str,
     ):
-        await interaction.response.defer(ephemeral=True)
         gid = interaction.guild_id
         guild = interaction.guild
         gcfg = await self.bot.db.get_guild_settings(gid)
@@ -295,7 +297,7 @@ class Banking(commands.Cog):
         if len(targets) > 1:
             view = ConfirmView(interaction.user.id, timeout=gcfg.confirm_timeout_seconds)
             action_word = "credit" if delta > 0 else "deduct"
-            await interaction.followup.send(
+            await interaction.edit_original_response(
                 embed=discord.Embed(
                     title="⚠️ Bulk Operation Confirmation",
                     description=(
@@ -305,7 +307,6 @@ class Banking(commands.Cog):
                     colour=discord.Colour.orange()
                 ),
                 view=view,
-                ephemeral=True
             )
             await view.wait()
             if not view.value:

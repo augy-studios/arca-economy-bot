@@ -13,7 +13,7 @@ import logging
 from datetime import datetime, timezone
 
 from utils.helpers import (
-    require_admin, require_mod, is_mod, is_admin,
+    require_admin, require_mod,
     post_audit, post_alert,
     success_embed, error_embed, info_embed, warn_embed
 )
@@ -133,8 +133,9 @@ class Admin(commands.Cog):
         key: app_commands.Choice[str],
         value: str,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
 
@@ -146,7 +147,7 @@ class Admin(commands.Cog):
             try:
                 int(cleaned)
             except ValueError:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=error_embed("Invalid", "Provide a numeric channel ID or #mention."),
                     ephemeral=True,
                 )
@@ -154,18 +155,18 @@ class Admin(commands.Cog):
             try:
                 int(cleaned)
             except ValueError:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=error_embed("Invalid", "Value must be a whole number."), ephemeral=True
                 )
         elif kind == "bool":
             if cleaned.lower() not in ("true", "false", "1", "0", "yes", "no"):
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=error_embed("Invalid", "Use `true` or `false`."), ephemeral=True
                 )
             cleaned = "true" if cleaned.lower() in ("true", "1", "yes") else "false"
 
         await self.bot.db.set_config(interaction.guild_id, key.value, cleaned)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed("Config Updated", f"`{key.value}` → `{cleaned}`"),
             ephemeral=True,
         )
@@ -173,8 +174,9 @@ class Admin(commands.Cog):
     # ── /config view ──────────────────────────────────────────────────────────
     @config_group.command(name="view", description="Show all current configuration values.")
     async def config_view(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         gcfg = await self.bot.db.get_guild_settings(interaction.guild_id)
@@ -203,16 +205,16 @@ class Admin(commands.Cog):
         embed.add_field(name="Confirm Timeout (s)",value=str(gcfg.confirm_timeout_seconds),     inline=True)
         embed.add_field(name="Trade Timeout (s)",  value=str(gcfg.trade_timeout_seconds),       inline=True)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /config backup ────────────────────────────────────────────────────────
     @config_group.command(name="backup", description="Manually trigger a database backup.")
     async def admin_backup(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
-        await interaction.response.defer(ephemeral=True)
         try:
             path = await self.bot.db.backup()
             await interaction.followup.send(
@@ -226,11 +228,11 @@ class Admin(commands.Cog):
     # ── /config integrity ─────────────────────────────────────────────────────
     @config_group.command(name="integrity", description="Run database integrity scan now.")
     async def admin_integrity(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
-        await interaction.response.defer(ephemeral=True)
         result = await self.bot.db.integrity_scan()
         if result["count"] == 0:
             await interaction.followup.send(
@@ -247,15 +249,16 @@ class Admin(commands.Cog):
     @app_commands.describe(user="User to blacklist", reason="Reason")
     async def blacklist_add(self, interaction: discord.Interaction,
                             user: discord.Member, reason: Optional[str] = None):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         result = await self.bot.db.add_blacklisted_alt(
             interaction.guild_id, user.id, interaction.user.id, reason
         )
         if not result["ok"]:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Failed", result.get("error")), ephemeral=True
             )
         await post_audit(
@@ -263,7 +266,7 @@ class Admin(commands.Cog):
             executor=interaction.user, target=user,
             action="blacklist_add", note=reason
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed("Blacklisted", f"{user.mention} added to alt blacklist."),
             ephemeral=True
         )
@@ -271,12 +274,13 @@ class Admin(commands.Cog):
     @config_group.command(name="blacklist_remove", description="Remove a user from the alt blacklist.")
     @app_commands.describe(user="User to unblacklist")
     async def blacklist_remove(self, interaction: discord.Interaction, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         await self.bot.db.remove_blacklisted_alt(interaction.guild_id, user.id)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed("Removed", f"{user.mention} removed from blacklist."), ephemeral=True
         )
 
@@ -295,8 +299,8 @@ class Admin(commands.Cog):
         interaction: discord.Interaction,
         category: app_commands.Choice[str] = None,
     ):
-        cat = category.value if category else "total"
         await interaction.response.defer()
+        cat = category.value if category else "total"
 
         gcfg = await self.bot.db.get_guild_settings(interaction.guild_id)
         cached = await self.bot.db.get_leaderboard_data(interaction.guild_id, cat)
@@ -351,8 +355,9 @@ class Admin(commands.Cog):
         user: Optional[discord.Member] = None,
         page: Optional[int] = 1,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         if page < 1:
@@ -365,7 +370,7 @@ class Admin(commands.Cog):
             user_id=user.id if user else None
         )
         if not logs:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=info_embed("Audit Log", "No entries found."), ephemeral=True
             )
 
@@ -389,16 +394,16 @@ class Admin(commands.Cog):
                 ),
                 inline=False
             )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /config refreshlb ─────────────────────────────────────────────────────
     @config_group.command(name="refreshlb", description="Force a leaderboard cache refresh.")
     async def refresh_lb(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if not require_admin(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
-        await interaction.response.defer(ephemeral=True)
         await self._rebuild_leaderboard_cache(interaction.guild_id)
         await interaction.followup.send(
             embed=success_embed("Leaderboard Refreshed"), ephemeral=True

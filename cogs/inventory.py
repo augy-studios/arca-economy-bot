@@ -31,11 +31,12 @@ class Inventory(commands.Cog):
     @app_commands.describe(user="User to inspect (leave blank for yourself)")
     async def inv_view(self, interaction: discord.Interaction,
                        user: Optional[discord.Member] = None):
+        await interaction.response.defer(ephemeral=True)
         target = user or interaction.user
         rows = await self.bot.db.get_user_inventory(interaction.guild_id, target.id)
 
         if not rows:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=info_embed(f"{target.display_name}'s Inventory", "Empty inventory."),
                 ephemeral=True
             )
@@ -48,7 +49,7 @@ class Inventory(commands.Cog):
                 value=row['item_desc'] or "No description.",
                 inline=False
             )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /inventory edit ───────────────────────────────────────────────────────
     @inv.command(name="edit", description="[MOD] Add or remove an item from a user or role.")
@@ -72,16 +73,16 @@ class Inventory(commands.Cog):
         quantity: Optional[int] = 1,
         note: Optional[str] = None,
     ):
+        await interaction.response.defer(ephemeral=True)
         if not require_mod(interaction):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("No Permission"), ephemeral=True
             )
         if quantity is None or quantity <= 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=error_embed("Invalid Quantity"), ephemeral=True
             )
 
-        await interaction.response.defer(ephemeral=True)
         gid = interaction.guild_id
         guild = interaction.guild
         gcfg = await self.bot.db.get_guild_settings(gid)
@@ -112,7 +113,7 @@ class Inventory(commands.Cog):
 
         if len(targets) > 1:
             view = ConfirmView(interaction.user.id, timeout=gcfg.confirm_timeout_seconds)
-            await interaction.followup.send(
+            await interaction.edit_original_response(
                 embed=discord.Embed(
                     title="⚠️ Bulk Inventory Edit",
                     description=(
@@ -121,7 +122,7 @@ class Inventory(commands.Cog):
                     ),
                     colour=discord.Colour.orange()
                 ),
-                view=view, ephemeral=True
+                view=view,
             )
             await view.wait()
             if not view.value:

@@ -277,10 +277,9 @@ class Help(commands.Cog):
 
     @app_commands.command(name="help", description="Browse all bot commands with navigation buttons.")
     async def help_cmd(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         view = HelpView(interaction.user.id)
-        await interaction.response.send_message(
-            embed=_build_embed(0), view=view, ephemeral=False
-        )
+        await interaction.followup.send(embed=_build_embed(0), view=view)
 
 
 async def setup(bot):
