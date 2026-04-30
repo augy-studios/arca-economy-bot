@@ -52,7 +52,7 @@ class EconomyBot(commands.Bot):
         self.db = DatabaseManager()
         await self.db.initialise()
 
-        cogs = ["cogs.banking", "cogs.inventory", "cogs.shop", "cogs.admin"]
+        cogs = ["cogs.banking", "cogs.inventory", "cogs.shop", "cogs.admin", "cogs.help"]
         for cog in cogs:
             try:
                 await self.load_extension(cog)

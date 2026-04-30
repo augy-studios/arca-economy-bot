@@ -19,7 +19,7 @@ A full-featured Discord economy bot built with `discord.py` (slash commands), `a
 | **Integrity** | Auto-scan every 6h; fixes negatives, flags anomalies |
 | **Monitoring** | Critical alert channel, error log file, all failures reported |
 | **Inflation Control** | Max balance cap, daily earning cap, total_spent tracking |
-| **Debt** | Optional per `.env` (`ALLOW_DEBT=true`) — off by default |
+| **Debt** | Optional per `/admin config set` (`allow_debt true`) — off by default |
 | **Soft Deletion** | Nothing is ever hard-deleted from the database |
 
 ---
@@ -29,10 +29,10 @@ A full-featured Discord economy bot built with `discord.py` (slash commands), `a
 ### 1. Clone & create venv
 
 ```bash
-git clone https://github.com/yourname/economybot.git
-cd economybot
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/yourname/arca-economy-bot.git
+cd arca-economy-bot
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -47,9 +47,8 @@ Fill in:
 
 - `BOT_TOKEN` — your bot token from the [Discord Developer Portal](https://discord.com/developers/applications)
 - `GUILD_ID` — your server's ID (right-click server → Copy Server ID with Developer Mode on)
-- `ADMIN_ROLE_IDS` / `MOD_ROLE_IDS` — comma-separated role IDs (no spaces)
 
-All other values have sensible defaults.
+All other values have sensible defaults and can be changed at runtime via `/admin config set`.
 
 ### 3. Enable Privileged Intents
 
@@ -68,7 +67,7 @@ https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=27
 ### 5. Run
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 python bot.py
 ```
 
@@ -76,9 +75,9 @@ python bot.py
 
 After the bot is online, run these in your server:
 
-```bash
-/admin config key:audit_log_channel value:#your-audit-channel
-/admin config key:alert_channel value:#your-alert-channel
+```text
+/admin config set key:Audit Log Channel value:#your-audit-channel
+/admin config set key:Alert Channel value:#your-alert-channel
 ```
 
 ---
@@ -96,6 +95,8 @@ python bot.py
 ---
 
 ## Command Reference
+
+Run `/help` in Discord for an interactive paginated version of this reference.
 
 ### 💵 Banking
 
@@ -145,10 +146,10 @@ python bot.py
 
 | Command | Who | Description |
 | --- | --- | --- |
-| `/trade user [offer_cash] [offer_item] [request_cash] [request_item]` | Everyone | Propose a trade |
+| `/trade user [offer_cash] [offer_item] [offer_qty] [request_cash] [request_item] [request_qty]` | Everyone | Propose a trade |
 
 - Target user gets an Accept/Decline button prompt
-- Trade expires after `TRADE_TIMEOUT_SECONDS` (default 120s)
+- Trade expires after `trade_timeout_seconds` (default 120s)
 - Non-tradeable items are blocked from trading
 - All trades are logged
 
@@ -161,7 +162,7 @@ python bot.py
 | `/leaderboard [category]` | Everyone | View top 20 rankings |
 
 **Categories:** Cash · Bank · Total · Most Spent · Most Items  
-Cache refreshes every 5 minutes (configurable via `LB_CACHE_TTL`).
+Cache refreshes every `lb_cache_ttl` seconds (default 300s).
 
 ---
 
@@ -175,11 +176,20 @@ Every logged entry contains: executor, target, field, before value, after value,
 
 ---
 
+### 📖 Help
+
+| Command | Who | Description |
+| --- | --- | --- |
+| `/help` | Everyone | Paginated interactive command reference |
+
+---
+
 ### 🔧 Admin
 
 | Command | Who | Description |
 | --- | --- | --- |
-| `/admin config key value` | Admin | Set audit log or alert channel |
+| `/admin config set key value` | Admin | Set a bot configuration value |
+| `/admin config view` | Admin | Show all current configuration values |
 | `/admin backup` | Admin | Manual database backup |
 | `/admin integrity` | Admin | Run integrity scan now |
 | `/admin blacklist_add user [reason]` | Admin | Block user from receiving gifts/items |
@@ -211,10 +221,11 @@ economybot/
 ├── .env.example
 ├── .gitignore
 ├── cogs/
+│   ├── admin.py            # /admin + /leaderboard + /auditlog
 │   ├── banking.py          # /money commands
+│   ├── help.py             # /help paginated command reference
 │   ├── inventory.py        # /inventory + /trade commands
-│   ├── shop.py             # /shop + /buy commands
-│   └── admin.py            # /admin + /leaderboard + /auditlog
+│   └── shop.py             # /shop + /buy commands
 ├── utils/
 │   ├── config.py           # .env loader
 │   ├── database.py         # All DB logic (atomic transactions, backups, integrity)
@@ -228,25 +239,24 @@ economybot/
 
 ## Configuration Reference
 
+All runtime settings are changed with `/admin config set` and inspected with `/admin config view`.  
+Only `BOT_TOKEN` and `GUILD_ID` must be set in `.env`.
+
 | Key | Default | Description |
 | --- | --- | --- |
-| `BOT_TOKEN` | — | **Required.** Bot token |
-| `GUILD_ID` | — | **Required.** Your server ID |
-| `ADMIN_ROLE_IDS` | — | Comma-separated admin role IDs |
-| `MOD_ROLE_IDS` | — | Comma-separated mod role IDs |
-| `AUDIT_LOG_CHANNEL_ID` | 0 | Set via `/admin config` instead |
-| `ALERT_CHANNEL_ID` | 0 | Set via `/admin config` instead |
-| `CURRENCY_SYMBOL` | 💰 | Symbol shown in balance displays |
-| `CURRENCY_NAME` | coins | Name of the currency |
-| `MAX_BALANCE` | 10,000,000 | Hard cap on any wallet |
-| `MAX_DAILY_EARN` | 5,000 | Daily earning cap per user |
-| `GIFT_COOLDOWN_HOURS` | 24 | Hours before re-gifting same user |
-| `GIFT_FLAGGING_THRESHOLD` | 3 | Unique recipients before flood alert |
-| `GIFT_FLAGGING_WINDOW_HOURS` | 1 | Window for flood detection |
-| `RATE_LIMIT_SECONDS` | 5 | Per-command cooldown |
-| `ALLOW_DEBT` | false | Allow negative cash balance |
-| `LB_CACHE_TTL` | 300 | Leaderboard cache lifetime (seconds) |
-| `BACKUP_INTERVAL_HOURS` | 6 | Auto-backup frequency |
-| `BACKUP_KEEP_COUNT` | 28 | Number of backups to keep |
-| `CONFIRM_TIMEOUT_SECONDS` | 30 | Confirmation prompt timeout |
-| `TRADE_TIMEOUT_SECONDS` | 120 | Trade offer timeout |
+| `BOT_TOKEN` | — | **Required (.env only).** Bot token |
+| `GUILD_ID` | — | **Required (.env only).** Your server ID |
+| `audit_log_channel` | *(not set)* | Channel ID for audit log posts |
+| `alert_channel` | *(not set)* | Channel ID for critical alert posts |
+| `currency_symbol` | 💰 | Symbol shown in balance displays |
+| `currency_name` | coins | Name of the currency |
+| `max_balance` | 10,000,000 | Hard cap on any wallet |
+| `max_daily_earn` | 5,000 | Daily earning cap per user |
+| `allow_debt` | false | Allow negative cash balance |
+| `gift_cooldown_hours` | 24 | Hours before re-gifting the same user |
+| `gift_flagging_threshold` | 3 | Unique recipients before flood alert |
+| `gift_flagging_window_hours` | 1 | Window for flood detection |
+| `rate_limit_seconds` | 5 | Per-command cooldown |
+| `lb_cache_ttl` | 300 | Leaderboard cache lifetime (seconds) |
+| `confirm_timeout_seconds` | 30 | Confirmation prompt timeout |
+| `trade_timeout_seconds` | 120 | Trade offer timeout |
