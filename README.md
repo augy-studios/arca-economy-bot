@@ -1,4 +1,4 @@
-# 💰 Arca Economy Bot
+# <img src="/AEB-main.png" height="40" alt="icon"> Arca Economy Bot
 
 A full-featured Discord economy bot built with `discord.py` (slash commands), `aiosqlite`, and a local SQLite database. Designed to run on a Debian VPS inside a Python `venv`.
 
