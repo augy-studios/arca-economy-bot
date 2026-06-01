@@ -65,10 +65,10 @@ class EconomyBot(commands.Bot):
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user} (ID: {self.user.id})")
+        guild_count = len(self.guilds)
         await self.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
-                name="the economy 💰"
+            activity=discord.CustomActivity(
+                name=f"Watching the economy with {guild_count} guilds"
             )
         )
 
